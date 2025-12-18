@@ -39,8 +39,9 @@ model User {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  createdIncidents  Incident[] @relation("CreatedIncidents")
-  assignedIncidents Incident[] @relation("AssignedIncidents")
+  createdIncidents  Incident[]        @relation("CreatedIncidents")
+  assignedIncidents Incident[]        @relation("AssignedIncidents")
+  tokenBlacklists   token_blacklist[]
 
   @@index([invited_by_id])
 }
@@ -57,4 +58,15 @@ model Incident {
   assigned_to_user   User     @relation("AssignedIncidents", fields: [assigned_to_id], references: [id])
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
+}
+
+model token_blacklist {
+  id        String  @id @default(uuid())
+  token     String  @unique
+  is_active Boolean @default(true)
+  userid    String
+  user      User    @relation(fields: [userid], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }

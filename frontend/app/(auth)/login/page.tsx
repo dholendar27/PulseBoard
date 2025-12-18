@@ -1,9 +1,13 @@
 "use client"
 import {useState} from "react";
 import {Activity} from "lucide-react"
+import {login} from "@/app/(api)/auth";
+import {useRouter} from "next/navigation";
 
+interface loginResponse {status: boolean, message: string}
 export default function Login ()  {
     const [showPassword, setShowPassword] = useState<boolean>(false);
+    const router = useRouter();
     const [loginDetails, setLoginDetails] = useState({
         "email": "",
         "password": ""
@@ -13,6 +17,15 @@ export default function Login ()  {
         "email": {"status": false, "message": ""},
         "password": {"status": false, "message": ""},
     });
+
+    const handleLogin = async () => {
+        const response:loginResponse  = await login(loginDetails);
+        if(response.status) {
+            // Set a client-side cookie to indicate authentication
+            document.cookie = "auth-token=authenticated; path=/; max-age=86400"; // 24 hours
+            router.push("/dashboard");
+        }
+    }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const {name, value} = e.target;
@@ -53,7 +66,7 @@ export default function Login ()  {
                     </div>
                     <input className={`border border-[#B1B7C0] rounded-md h-12 p-2 test-sm font-medium ${error?.password?.status ? "text-red-500 border-red-500" : "text-gray-600 border-[#B1B7C0]"}`} type={showPassword ? "text" : "password"} name="password" id="password" required onChange={handleChange} value={loginDetails.password} placeholder="password" />
                 </div>
-                <button className="flex items-center justify-center gap-1 bg-[#2563EB] py-2 rounded-md mt-2 text-[#FFFFFF] font-bold h-12">Sign In</button>
+                <button className="flex items-center justify-center gap-1 bg-[#2563EB] py-2 rounded-md mt-2 text-[#FFFFFF] font-bold h-12" onClick={handleLogin}>Sign In</button>
             </div>
         </div>
     )
