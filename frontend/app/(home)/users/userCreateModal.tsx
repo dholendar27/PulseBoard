@@ -1,19 +1,19 @@
 "use client"
 import {X} from "lucide-react";
 import {useState} from "react";
+import {adduser} from "@/app/(api)/auth";
 
 interface UserCreateModalProps {
     onClose: () => void;
-    onUserCreated: (user: any) => void;
 }
 
-export default function UserCreateModal({ onClose, onUserCreated }: UserCreateModalProps) {
+export default function UserCreateModal({ onClose }: UserCreateModalProps) {
     const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
+        first_name: '',
+        last_name: '',
         email: '',
         password: '',
-        role: 'User'
+        role: ''
     });
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -24,18 +24,15 @@ export default function UserCreateModal({ onClose, onUserCreated }: UserCreateMo
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
+        const response = await adduser(formData)
+        console.log("response", response)
+        if (response.success) {
+            onClose()
+        }
         e.preventDefault();
-        const newUser = {
-            id: Date.now(),
-            name: `${formData.firstName} ${formData.lastName}`,
-            email: formData.email,
-            role: formData.role,
-            createdBy: 'Current User',
-            createdAt: new Date().toISOString()
-        };
-        onUserCreated(newUser);
     };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="fixed inset-0 bg-black/50" onClick={onClose}></div>
@@ -56,10 +53,10 @@ export default function UserCreateModal({ onClose, onUserCreated }: UserCreateMo
                                 <input 
                                     className="border rounded-md h-10 p-2 text-sm font-medium text-gray-600 border-[#B1B7C0]" 
                                     type="text" 
-                                    name="firstName" 
+                                    name="first_name"
                                     id="firstName" 
                                     placeholder="John" 
-                                    value={formData.firstName}
+                                    value={formData.first_name}
                                     onChange={handleInputChange}
                                     required  
                                 />
@@ -69,10 +66,10 @@ export default function UserCreateModal({ onClose, onUserCreated }: UserCreateMo
                                 <input 
                                     className="border rounded-md h-10 p-2 text-sm font-medium text-gray-600 border-[#B1B7C0]" 
                                     type="text" 
-                                    name="lastName" 
+                                    name="last_name"
                                     id="lastName" 
                                     placeholder="Doe"
-                                    value={formData.lastName}
+                                    value={formData.last_name}
                                     onChange={handleInputChange}
                                 />
                             </div>
@@ -112,10 +109,8 @@ export default function UserCreateModal({ onClose, onUserCreated }: UserCreateMo
                                 value={formData.role}
                                 onChange={handleInputChange}
                             >
-                                <option value="User">User</option>
-                                <option value="Admin">Admin</option>
-                                <option value="Manager">Manager</option>
-                                <option value="Viewer">Viewer</option>
+                                <option value="ADMIN">Admin</option>
+                                <option value="VIEWER">Viewer</option>
                             </select>
                         </div>
                     </form>

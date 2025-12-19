@@ -32,3 +32,13 @@ export const getUsers = async () => {
     const response = await axiosClient.get("users");
     return response.data;
 }
+
+export const adduser = async (payload) => {
+    const response = await axiosClient.post("/add-user", payload);
+    return response.data;
+}
+
+export const deleteUser = async (id: string) => {
+    const response = await axiosClient.delete(`/${id}`);
+    return response.data;
+}

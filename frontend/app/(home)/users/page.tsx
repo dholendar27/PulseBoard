@@ -2,7 +2,10 @@
 
 import {Plus, SquarePen, Trash2, Loader2} from "lucide-react";
 import {useEffect, useState} from "react";
-import {getUsers} from "@/app/(api)/auth";
+import {deleteUser, getUsers} from "@/app/(api)/auth";
+import ProtectedRoute from "@/app/(components)/ProtectedRoute";
+import UserCreateModal from "@/app/(home)/users/userCreateModal";
+import UserDeleteModal from "./userDeleteModal";
 
 interface User {
     id: string;
@@ -21,6 +24,16 @@ interface User {
 export default function User() {
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [openModal, setOpenModal] = useState<boolean>(false);
+    const [deleteModal, setDeleteModal] = useState<{
+        isOpen: boolean;
+        user: User | null;
+        isDeleting: boolean;
+    }>({
+        isOpen: false,
+        user: null,
+        isDeleting: false
+    });
 
     const getUsersList = async () => {
         try {
@@ -34,6 +47,55 @@ export default function User() {
         }
     }
 
+    const onClose = () => {
+        setOpenModal(false);
+    }
+
+    const onOpen = () => {
+        setOpenModal(true);
+    }
+
+    const handleDeleteClick = (user: User) => {
+        setDeleteModal({
+            isOpen: true,
+            user: user,
+            isDeleting: false
+        });
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!deleteModal.user) return;
+
+        setDeleteModal((prev: typeof deleteModal) => ({ ...prev, isDeleting: true }));
+
+        try {
+            const response = await deleteUser(deleteModal.user.id);
+            if (response.success) {
+                // Remove user from local state
+                setUsers(prev => prev.filter(u => u.id !== deleteModal.user?.id));
+                
+                // Close modal
+                setDeleteModal({
+                    isOpen: false,
+                    user: null,
+                    isDeleting: false
+                });
+
+                console.log(`User ${deleteModal.user.first_name} ${deleteModal.user.last_name} deleted successfully`);
+            }
+        } catch (error) {
+            console.error("Failed to delete user:", error);
+            setDeleteModal((prev: typeof deleteModal) => ({ ...prev, isDeleting: false }));
+        }
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteModal({
+            isOpen: false,
+            user: null,
+            isDeleting: false
+        });
+    };
     const formatDate = (dateString: string): string => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
@@ -52,9 +114,9 @@ export default function User() {
             'user': 'bg-green-100 text-green-800 border-green-200',
             'viewer': 'bg-gray-100 text-gray-800 border-gray-200'
         };
-        
+
         const colorClass = roleColors[role.toLowerCase() as keyof typeof roleColors] || 'bg-gray-100 text-gray-800 border-gray-200';
-        
+
         return (
             <span className={`px-2 py-1 rounded-full text-xs font-medium border ${colorClass}`}>
                 {role.charAt(0).toUpperCase() + role.slice(1)}
@@ -67,7 +129,17 @@ export default function User() {
     },[])
 
     return (
+        <ProtectedRoute requiredRole={["ADMIN", "MANAGER"]}>
         <div>
+            {openModal && (<UserCreateModal onClose={onClose}/>)}
+            
+            <UserDeleteModal
+                isOpen={deleteModal.isOpen}
+                onClose={handleDeleteCancel}
+                onConfirm={handleDeleteConfirm}
+                user={deleteModal.user}
+                isDeleting={deleteModal.isDeleting}
+            />
             <div className="flex items-center justify-between gap-2">
                 <div>
                     <p className="text-3xl font-bold">Users</p>
@@ -77,6 +149,7 @@ export default function User() {
                     <button
                         className="flex gap-2 bg-[#2663EB] hover:bg-blue-700 p-2 rounded-md text-[#FFFFFF] font-medium items-center cursor-pointer transition-colors duration-200"
                         disabled={isLoading}
+                        onClick={onOpen}
                     >
                         <Plus size={20}/>
                         <span>Add User</span>
@@ -156,8 +229,8 @@ export default function User() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-900">
-                                                {user.invitedBy ? 
-                                                    `${user.invitedBy.first_name} ${user.invitedBy.last_name}` : 
+                                                {user.invitedBy ?
+                                                    `${user.invitedBy.first_name} ${user.invitedBy.last_name}` :
                                                     'System'
                                                 }
                                             </div>
@@ -167,15 +240,16 @@ export default function User() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
                                             <div className="flex gap-2 items-center justify-center">
-                                                <button 
+                                                <button
                                                     className="bg-blue-600 hover:bg-blue-700 p-2 rounded-md transition-colors duration-200 shadow-sm"
                                                     title="Edit user"
                                                 >
                                                     <SquarePen size={16} color="#FFFFFF"/>
                                                 </button>
-                                                <button 
+                                                <button
                                                     className="bg-red-500 hover:bg-red-600 p-2 rounded-md transition-colors duration-200 shadow-sm"
                                                     title="Delete user"
+                                                    onClick={() => handleDeleteClick(user)}
                                                 >
                                                     <Trash2 size={16} color="#FFFFFF"/>
                                                 </button>
@@ -190,5 +264,6 @@ export default function User() {
             </div>
 
         </div>
+        </ProtectedRoute>
     )
 }

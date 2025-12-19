@@ -4,7 +4,8 @@ import {useEffect, useState} from "react";
 import Link from "next/link";
 import {useRouter} from "next/navigation";
 import {usePathname} from "next/navigation";
-import {logout, profile} from "@/app/(api)/auth";
+import {logout} from "@/app/(api)/auth";
+import {useAuth} from "@/app/(hooks)/useAuth";
 
 interface User {
     id: string;
@@ -18,15 +19,15 @@ interface User {
 export default function HomeLayout({children}: {children: React.ReactNode}) {
     const [profileDropdown, setProfileDropdown] = useState<boolean>(false);
     const router = useRouter();
-    const [user, setUser] = useState<User>({created_at: "", email: "", id: "", last_name: "", role: "", first_name: ""});
+    const { user, isLoading } = useAuth();
     const pathname = usePathname();
     const navItems = [
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: "/dashboard"},
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: "/dashboard" },
         { id: 'incidents', label: 'Incidents', icon: AlertCircle, href: "/incidents" },
-        { id: 'users', label: 'Users', icon: Users, href:"/users"},
-        { id: 'status', label: 'Status Page', icon: Globe, href:"/status"},
-
+        ...(user?.role === "ADMIN" || user?.role === "MANAGER" ? [{ id: 'users', label: 'Users', icon: Users, href: "/users" }] : []),
+        { id: 'status', label: 'Status Page', icon: Globe, href: "/status" },
     ];
+
 
     const handleProfileDropdown = () => {
         setProfileDropdown((prevState) => !prevState);
@@ -39,28 +40,6 @@ export default function HomeLayout({children}: {children: React.ReactNode}) {
     const handleLogout = async () => {
         await logout();
     }
-    const profileData = async () => {
-        try {
-            const profile_details = await profile();
-            localStorage.setItem("profile", JSON.stringify(profile_details));
-            setUser({
-                id: profile_details.id,
-                first_name: profile_details.first_name,
-                last_name: profile_details.last_name,
-                email: profile_details.email,
-                role: profile_details.role,
-                created_at: profile_details.created_at
-            });
-        } catch (error) {
-            console.error("Failed to fetch profile:", error);
-            // Handle error - maybe redirect to login
-            await logout();
-        }
-    }
-
-    useEffect(() => {
-        profileData().then(r => console.log(r));
-    }, [])
 
     return (
         <div>
@@ -74,7 +53,7 @@ export default function HomeLayout({children}: {children: React.ReactNode}) {
                         <div className="h-[2rem] w-[2rem] border border-[#E5E7EB] rounded-[50%] flex items-center justify-center">
                             <User size={18}/>
                         </div>
-                        <div>{user.first_name}</div>
+                        <div>{user?.first_name || 'Loading...'}</div>
                     </div>
                     <div className="ml-2 "> {/* Fixed to bottom-right of the screen */}
                         {profileDropdown ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
