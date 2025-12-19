@@ -140,3 +140,28 @@ authRouter.post("logout", validateUser, async (req: Request, res: Response) => {
   });
   return res.status(200).json({ status: true, message: "Logout successful" });
 });
+
+authRouter.get("/users", validateUser, async (req: Request, res: Response) => {
+  const user = req.user;
+  const users = await prisma.user.findMany({
+    where: {
+      NOT: {
+        id: user.id,
+      },
+    },
+    include: {
+      invitedUsers: {
+        select: {
+          first_name: true,
+          last_name: true,
+          email: true,
+        },
+      },
+    },
+  });
+  return res.status(200).json({
+    status: true,
+    message: "Retrived users successfully",
+    data: users,
+  });
+});
