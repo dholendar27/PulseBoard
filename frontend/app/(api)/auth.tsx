@@ -27,3 +27,8 @@ export const logout = async (): Promise<void> => {
         window.location.href = "/login";
     }
 }
+
+export const getUsers = async () => {
+    const response = await axiosClient.get("users");
+    return response.data;
+}
